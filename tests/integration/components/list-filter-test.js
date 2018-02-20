@@ -1,24 +1,36 @@
 import { moduleForComponent, test } from 'ember-qunit';
 import hbs from 'htmlbars-inline-precompile';
+import wait from 'ember-test-helpers/wait';
+import RSVP from 'rsvp';
+
+const ITEMS = [{city: 'San Francisco'}, {city: 'Portland'}, {city: 'Seatle'}];
+const FILTERED_ITEMS = [{city: 'San Francisco'}];
 
 moduleForComponent('list-filter', 'Integration | Component | list filter', {
   integration: true
 });
 
-test('it renders', function(assert) {
-  // Set any properties with this.set('myProperty', 'value');
-  // Handle any actions with this.on('myAction', function(val) { ... });
+test('should initially load all listings', function (assert) {
+  //actions need to return promises to handle potential asynchronou data
+  this.on('filterByCity', () => {
+    return RSVP.resolve({ results: ITEMS });
+  });
 
-  this.render(hbs`{{list-filter}}`);
-
-  assert.equal(this.$().text().trim(), '');
-
-  // Template block usage:
+  //
   this.render(hbs`
-    {{#list-filter}}
-      template block text
-    {{/list-filter}}
+  {{#list-filter filter=(action 'filterByCity') as |results|}}
+    <ul>
+    {{#each results as |item|}}
+      <li class="city">
+        {{item.city}}
+      </li>
+    {{/each}}
+    </ul>
+  {{/list-filter}}
   `);
 
-  assert.equal(this.$().text().trim(), 'template block text');
+  return wait().then(() => {
+    assert.equal(this.$('.city').length, 3);
+    assert.equal(this.$('.city').first().text().trim(), 'San Francisco');
+  });
 });
